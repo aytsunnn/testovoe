@@ -1,189 +1,209 @@
+"use client";
+
 import { useState, useEffect } from "react";
-import { Person } from "./types";
+import AgroRow from "./AgroRow";
+import AgroFilters from "./AgroFilters";
 import Image from "next/image";
+import { Person, FilterType } from "./types";
+import AddModal from "./AddModal";
 
-interface AddModalProps {
-  person?: Person | null;
-  onSave: (person: Omit<Person, "id">) => void;
-  onDelete?: (id: number) => void;
-  onClose: () => void;
-  isOpen: boolean;
-}
+const STORAGE_KEY = "agroTableData";
 
-export default function AddModal({
-  person,
-  onSave,
-  onDelete,
-  onClose,
-  isOpen,
-}: AddModalProps) {
-  const [formData, setFormData] = useState<Omit<Person, "id">>({
-    name: "",
-    company: "",
-    group: "",
+const initialData: Person[] = [
+  {
+    id: 1,
+    name: "Зубенко Михаил Петрович",
+    company: 'ООО "АСОЛЬ"',
+    group: "Партнер",
     present: false,
-  });
+  },
+  {
+    id: 2,
+    name: "Зубенко Михаил Петрович",
+    company: 'ООО "АСОЛЬ"',
+    group: "Прохожий",
+    present: false,
+  },
+];
+
+export default function AgroTable() {
+  const [data, setData] = useState<Person[]>(initialData);
+  const [filter, setFilter] = useState<FilterType>("all");
+  const [nameSearch, setNameSearch] = useState("");
+  const [companySearch, setCompanySearch] = useState("");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingPerson, setEditingPerson] = useState<Person | null>(null);
+  const [isClient, setIsClient] = useState(false);
+
+  const deletePerson = (id: number) => {
+    setData(data.filter((item) => item.id !== id));
+  };
+
+  const handleSave = (person: Omit<Person, "id">) => {
+    if (editingPerson) {
+      updatePerson(editingPerson.id, person);
+    } else {
+      addPerson(person);
+    }
+  };
 
   useEffect(() => {
-    if (person) {
-      setFormData({
-        name: person.name,
-        company: person.company,
-        group: person.group,
-        present: person.present,
-      });
-    } else {
-      setFormData({
-        name: "",
-        company: "",
-        group: "",
-        present: false,
-      });
+    setIsClient(true);
+    const savedData = localStorage.getItem(STORAGE_KEY);
+    if (savedData) {
+      setData(JSON.parse(savedData));
     }
-  }, [person]);
+  }, []);
 
-  if (!isOpen) return null;
-
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
-    const { name, value, type } = e.target as HTMLInputElement;
-    const checked =
-      type === "checkbox" ? (e.target as HTMLInputElement).checked : undefined;
-
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === "checkbox" ? checked : value,
-    }));
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSave(formData);
-    onClose();
-  };
-
-  const handleDelete = () => {
-    if (person && onDelete) {
-      onDelete(person.id);
-      onClose();
+  useEffect(() => {
+    if (isClient) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     }
+  }, [data, isClient]);
+
+  const filteredData = data.filter((item) => {
+    if (filter === "present" && !item.present) return false;
+    if (filter === "absent" && item.present) return false;
+
+    if (
+      nameSearch &&
+      !item.name.toLowerCase().includes(nameSearch.toLowerCase())
+    ) {
+      return false;
+    }
+
+    if (
+      companySearch &&
+      !item.company.toLowerCase().includes(companySearch.toLowerCase())
+    ) {
+      return false;
+    }
+
+    return true;
+  });
+
+  const togglePresence = (id: number) => {
+    setData(
+      data.map((item) =>
+        item.id === id ? { ...item, present: !item.present } : item
+      )
+    );
   };
+
+  const addPerson = (person: Omit<Person, "id">) => {
+    const newId = Math.max(0, ...data.map((p) => p.id)) + 1;
+    setData([...data, { ...person, id: newId }]);
+  };
+
+  const updatePerson = (id: number, person: Omit<Person, "id">) => {
+    setData(data.map((item) => (item.id === id ? { ...person, id } : item)));
+  };
+
+  const handleAddClick = () => {
+    setEditingPerson(null);
+    setIsModalOpen(true);
+  };
+
+  const handleRowClick = (person: Person) => {
+    setEditingPerson(person);
+    setIsModalOpen(true);
+  };
+
+  const presentCount = data.filter((item) => item.present).length;
+  const absentCount = data.length - presentCount;
 
   return (
-    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-      <div className="bg-white p-10 rounded-2xl w-2/3 max-w-4xl mx-auto relative">
-        <Image
-          src="/zakrivashka.png"
-          alt="close"
-          width={25}
-          height={25}
-          onClick={onClose}
-          className="absolute top-4 right-4 cursor-pointer"
-        />
+    <div className="flex flex-col h-screen overflow-hidden">
+      <div className="flex items-center justify-between p-4 bg-white z-20">
+        <div className="flex-shrink-0">
+          <Image
+            src="/logo.png"
+            alt="Агроном Сад"
+            width={130}
+            height={60}
+            priority
+          />
+        </div>
 
-        <div className="max-w-1/2 mx-auto">
-          <form onSubmit={handleSubmit}>
-            <div className="mb-4 flex items-center gap-4">
-              <label className="block text-[#4E3000] w-24">ФИО</label>
-              <input
-                type="text"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                className="flex-1 p-2 border-none rounded-lg shadow-sm border border-[#E9E9E9] focus:outline-none focus:ring-2 focus:ring-[#4CAF50] focus:border-transparent appearance-none"
-                required
-              />
-            </div>
+        <div className="flex items-center mx-4 ml-10 flex-grow">
+          <input
+            type="text"
+            placeholder="Поиск по имени"
+            value={nameSearch}
+            onChange={(e) => setNameSearch(e.target.value)}
+            className="w-60 pl-4 pr-4 py-2 border border-gray-300 rounded-lg text-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-[#4CAF50]"
+          />
+          <input
+            type="text"
+            placeholder="Поиск по компании"
+            value={companySearch}
+            onChange={(e) => setCompanySearch(e.target.value)}
+            className="w-60 ml-4 pl-4 pr-4 py-2 border border-gray-300 rounded-lg text-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-[#4CAF50]"
+          />
+          <button
+            type="button"
+            onClick={handleAddClick}
+            className="w-40 ml-4 bg-[#4CAF50] hover:bg-[#477c48] text-white text-sm py-2 px-4 rounded"
+          >
+            Добавить
+          </button>
+        </div>
 
-            <div className="mb-4 flex items-center gap-4">
-              <label className="block text-[#4E3000] w-24">Компания</label>
-              <input
-                type="text"
-                name="company"
-                value={formData.company}
-                onChange={handleChange}
-                className="flex-1 p-2 border-none rounded-lg shadow-sm border border-[#E9E9E9] focus:outline-none focus:ring-2 focus:ring-[#4CAF50] focus:border-transparent appearance-none"
-                required
-              />
-            </div>
-
-            <div className="mb-4 flex items-center gap-4">
-              <label className="block text-[#4E3000] w-24">Группа</label>
-              <select
-                name="group"
-                value={formData.group}
-                onChange={handleChange}
-                className="flex-1 p-2 border-none rounded-lg shadow-sm border border-[#E9E9E9] focus:outline-none focus:ring-2 focus:ring-[#4CAF50] focus:border-transparent appearance-none"
-                required
-              >
-                <option value="" className="text-[#4E3000] hover:bg-[#4CAF50]/10">Выберите группу</option>
-                <option value="Партнер" className="text-[#4E3000] hover:bg-[#4CAF50]/10">Партнер</option>
-                <option value="Прохожий" className="text-[#4E3000] hover:bg-[#4CAF50]/10">Прохожий</option>
-                <option value="Организатор" className="text-[#4E3000] hover:bg-[#4CAF50]/10">Организатор</option>
-              </select>
-            </div>
-
-            <div className="mb-4 flex items-center gap-4">
-              <label className="block text-[#4E3000] w-24">Присутствие</label>
-              <div className="flex-1 flex items-center">
-                <input
-                  type="checkbox"
-                  name="present"
-                  checked={formData.present || false}
-                  onChange={handleChange}
-                  className="mr-2 w-5 h-5 rounded cursor-pointer focus:outline-none accent-[#4CAF50]"
-                />
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-2">
-              {person ? (
-                // Режим редактирования
-                <>
-                  <button
-                    type="button"
-                    onClick={handleDelete}
-                    className="px-4 py-2 bg-[#EC5937] hover:bg-[#D94C2B] text-white rounded shadow-md transition-colors"
-                  >
-                    Удалить
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-4 py-2 bg-[#4CAF50] hover:bg-[#477c48] text-white rounded shadow-md transition-colors"
-                  >
-                    Сохранить
-                  </button>
-                  <button
-                    type="button"
-                    onClick={onClose}
-                    className="px-4 py-2 bg-[#737373] hover:bg-[#5a5a5a] text-white rounded shadow-md transition-colors"
-                  >
-                    Отмена
-                  </button>
-                </>
-              ) : (
-                // Режима добавления
-                <>
-                  <button
-                    type="submit"
-                    className="px-4 py-2 bg-[#4CAF50] hover:bg-[#477c48] text-white rounded shadow-md transition-colors"
-                  >
-                    Добавить
-                  </button>
-                  <button
-                    type="button"
-                    onClick={onClose}
-                    className="px-4 py-2 bg-[#737373] hover:bg-[#5a5a5a] text-white rounded shadow-md transition-colors"
-                  >
-                    Закрыть
-                  </button>
-                </>
-              )}
-            </div>
-          </form>
+        <div className="flex-shrink-0 flex flex-col items-end">
+          <div className="text-lg text-[#4E3000] font-bold">Посетители</div>
+          <div className="flex gap-2">
+            <div className="text-xl text-[#80BB00]">{presentCount}</div>
+            <div className="text-xl text-[#4E3000]">/</div>
+            <div className="text-xl text-[#EC5937]">{absentCount}</div>
+          </div>
         </div>
       </div>
+
+      <div className="flex-1 overflow-y-auto scrollbar-hide">
+        <table className="min-w-full divide-y divide-[#E9E9E9]">
+          <thead className="sticky top-0 z-10 bg-white">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-[#4E3000] uppercase tracking-wider">
+                Номер
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-[#4E3000] uppercase tracking-wider">
+                ФИО
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-[#4E3000] uppercase tracking-wider">
+                Компания
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-[#4E3000] uppercase tracking-wider">
+                Группа
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-[#4E3000] uppercase tracking-wider">
+                Присутствие
+              </th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {filteredData.map((item) => (
+              <AgroRow
+                key={item.id}
+                item={item}
+                togglePresence={togglePresence}
+                onRowClick={handleRowClick}
+              />
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="flex-shrink-0 p-4 bg-white z-10">
+        <AgroFilters filter={filter} setFilter={setFilter} />
+      </div>
+
+      <AddModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSave={handleSave}
+        onDelete={deletePerson}
+        person={editingPerson}
+      />
     </div>
   );
 }
