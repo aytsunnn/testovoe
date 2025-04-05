@@ -1,4 +1,4 @@
-export type FilterType = 'all' | 'present' | 'absent';
+export type FilterType = 'all' | 'present' | 'absent' | 'without';
 
 export interface Person {
   id: number;
@@ -9,3 +9,5 @@ export interface Person {
 }
 
 export type TogglePresenceType = (id: number) => void;
+export type AddPersonType = (person: Omit<Person, 'id'>) => void;
+export type UpdatePersonType = (id: number, person: Omit<Person, 'id'>) => void;
