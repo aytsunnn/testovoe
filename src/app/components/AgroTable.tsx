@@ -1,106 +1,188 @@
-"use client";
+import { useState, useEffect } from "react";
+import { Person } from "./types";
+import Image from "next/image";
 
-import { useState } from 'react';
-import AgroRow from './AgroRow';
-import AgroFilters from './AgroFilters';
-import Image from 'next/image';
-import { Person, FilterType } from './types';
+interface AddModalProps {
+  person?: Person | null;
+  onSave: (person: Omit<Person, "id">) => void;
+  onDelete?: (id: number) => void;
+  onClose: () => void;
+  isOpen: boolean;
+}
 
-const initialData: Person[] = [
-  {
-    id: 1,
-    name: 'Зубенко Михаил Петрович',
-    company: 'ООО "АСОЛЬ"',
-    group: 'Партнер',
-    present: false
-  },
-  {
-    id: 2,
-    name: 'Зубенко Михаил Петрович',
-    company: 'ООО "АСОЛЬ"',
-    group: 'Прохожий',
-    present: false
-  }
-];
-
-export default function AgroTable() {
-  const [data, setData] = useState<Person[]>(initialData);
-  const [filter, setFilter] = useState<FilterType>('all');
-
-  const filteredData = data.filter(item => {
-    if (filter === 'all') return true;
-    return filter === 'present' ? item.present : !item.present;
+export default function AddModal({
+  person,
+  onSave,
+  onDelete,
+  onClose,
+  isOpen,
+}: AddModalProps) {
+  const [formData, setFormData] = useState<Omit<Person, "id">>({
+    name: "",
+    company: "",
+    group: "",
+    present: false,
   });
 
-  const togglePresence = (id: number) => {
-    setData(data.map(item => 
-      item.id === id ? { ...item, present: !item.present } : item
-    ));
+  useEffect(() => {
+    if (person) {
+      setFormData({
+        name: person.name,
+        company: person.company,
+        group: person.group,
+        present: person.present,
+      });
+    } else {
+      setFormData({
+        name: "",
+        company: "",
+        group: "",
+        present: false,
+      });
+    }
+  }, [person]);
+
+  if (!isOpen) return null;
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
+    const { name, value, type } = e.target as HTMLInputElement;
+    const checked =
+      type === "checkbox" ? (e.target as HTMLInputElement).checked : undefined;
+
+    setFormData((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSave(formData);
+    onClose();
+  };
+
+  const handleDelete = () => {
+    if (person && onDelete) {
+      onDelete(person.id);
+      onClose();
+    }
   };
 
   return (
-    <div className="w-full mx-auto p-4">
-      <div className="flex flex-row items-center justify-between mb-6">
-        
-        <div className="flex-shrink-0">
-          <Image
-            src="/logo.png"
-            alt="Агроном Сад"
-            width={150}
-            height={80}
-            priority
-          />
-        </div>
+    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+      <div className="bg-white p-10 rounded-2xl w-2/3 max-w-4xl mx-auto relative">
+        <Image
+          src="/zakrivashka.png"
+          alt="close"
+          width={25}
+          height={25}
+          onClick={onClose}
+          className="absolute top-4 right-4 cursor-pointer"
+        />
 
-        <div className="flex items-center mx-4 ml-10 flex-grow">
-          <input
-            type="text"
-            placeholder="Поиск по имени"
-            className="w-60 pl-4 pr-4 py-2 border border-gray-300 rounded-lg text-gray-600 focus:outline-none focus:ring-2 focus:ring-green-500"
-          />
-          <input
-            type="text"
-            placeholder="Поиск по компании"
-            className="w-60 ml-4 pl-4 pr-4 py-2 border border-gray-300 rounded-lg text-gray-600 focus:outline-none focus:ring-2 focus:ring-green-500"
-          />
-          <button
-            type="button"
-            className="w-40 ml-4 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
-          >
-            Добавить
-          </button>
-        </div>
+        <div className="max-w-1/2 mx-auto">
+          <form onSubmit={handleSubmit}>
+            <div className="mb-4 flex items-center gap-4">
+              <label className="block text-[#4E3000] w-24">ФИО</label>
+              <input
+                type="text"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                className="flex-1 p-2 border-none rounded-lg shadow-sm border border-[#E9E9E9] focus:outline-none focus:ring-2 focus:ring-[#4CAF50] focus:border-transparent appearance-none"
+                required
+              />
+            </div>
 
-        <div className="flex-shrink-0 flex flex-col items-end">
-          <div className="text-xl">Посетители</div>
-          <div className="flex gap-2">
-            <div className="text-xl text-green-500">280</div>
-            <div className="text-xl">/</div>
-            <div className="text-xl text-red-500">35</div>
-          </div>
+            <div className="mb-4 flex items-center gap-4">
+              <label className="block text-[#4E3000] w-24">Компания</label>
+              <input
+                type="text"
+                name="company"
+                value={formData.company}
+                onChange={handleChange}
+                className="flex-1 p-2 border-none rounded-lg shadow-sm border border-[#E9E9E9] focus:outline-none focus:ring-2 focus:ring-[#4CAF50] focus:border-transparent appearance-none"
+                required
+              />
+            </div>
+
+            <div className="mb-4 flex items-center gap-4">
+              <label className="block text-[#4E3000] w-24">Группа</label>
+              <select
+                name="group"
+                value={formData.group}
+                onChange={handleChange}
+                className="flex-1 p-2 border-none rounded-lg shadow-sm border border-[#E9E9E9] focus:outline-none focus:ring-2 focus:ring-[#4CAF50] focus:border-transparent appearance-none"
+                required
+              >
+                <option value="" className="text-[#4E3000] hover:bg-[#4CAF50]/10">Выберите группу</option>
+                <option value="Партнер" className="text-[#4E3000] hover:bg-[#4CAF50]/10">Партнер</option>
+                <option value="Прохожий" className="text-[#4E3000] hover:bg-[#4CAF50]/10">Прохожий</option>
+                <option value="Организатор" className="text-[#4E3000] hover:bg-[#4CAF50]/10">Организатор</option>
+              </select>
+            </div>
+
+            <div className="mb-4 flex items-center gap-4">
+              <label className="block text-[#4E3000] w-24">Присутствие</label>
+              <div className="flex-1 flex items-center">
+                <input
+                  type="checkbox"
+                  name="present"
+                  checked={formData.present || false}
+                  onChange={handleChange}
+                  className="mr-2 w-5 h-5 rounded cursor-pointer focus:outline-none accent-[#4CAF50]"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2">
+              {person ? (
+                // Режим редактирования
+                <>
+                  <button
+                    type="button"
+                    onClick={handleDelete}
+                    className="px-4 py-2 bg-[#EC5937] hover:bg-[#D94C2B] text-white rounded shadow-md transition-colors"
+                  >
+                    Удалить
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 bg-[#4CAF50] hover:bg-[#477c48] text-white rounded shadow-md transition-colors"
+                  >
+                    Сохранить
+                  </button>
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="px-4 py-2 bg-[#737373] hover:bg-[#5a5a5a] text-white rounded shadow-md transition-colors"
+                  >
+                    Отмена
+                  </button>
+                </>
+              ) : (
+                // Режима добавления
+                <>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 bg-[#4CAF50] hover:bg-[#477c48] text-white rounded shadow-md transition-colors"
+                  >
+                    Добавить
+                  </button>
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="px-4 py-2 bg-[#737373] hover:bg-[#5a5a5a] text-white rounded shadow-md transition-colors"
+                  >
+                    Закрыть
+                  </button>
+                </>
+              )}
+            </div>
+          </form>
         </div>
-      </div>
-      
-      <div className="inline border-gray-300 rounded-lg overflow-hidden mb-6">
-        <table className="min-w-full divide-y divide-[#E9E9E9]">
-          <thead className="">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-[#4E3000] uppercase tracking-wider">Номер</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-[#4E3000] uppercase tracking-wider">ФИО</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-[#4E3000] uppercase tracking-wider">Компания</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-[#4E3000] uppercase tracking-wider">Группа</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-[#4E3000] uppercase tracking-wider">Присутствие</th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {filteredData.map((item) => (
-              <AgroRow key={item.id} item={item} togglePresence={togglePresence} />
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <div className="flex justify-between items-center mt-4">
-        <AgroFilters filter={filter} setFilter={setFilter} />
       </div>
     </div>
   );
