@@ -40,45 +40,68 @@ export default function AgroTable() {
 
   return (
     <div className="w-full mx-auto p-4">
-      <div className='flex flex-row'>  
-        <div className="mb-8">
+      <div className="flex flex-row items-center justify-between mb-6">
+        
+        <div className="flex-shrink-0">
           <Image
             src="/logo.png"
             alt="Агроном Сад"
-            width={187}
-            height={89}
+            width={150}
+            height={80}
             priority
           />
         </div>
 
-        <div className="ml-8 mt-4 ">
+        <div className="flex items-center mx-4 ml-10 flex-grow">
           <input
-              type="text"
-              placeholder="Поиск по имени"
-              className="pl-6 pr-4 py-2 border border-gray-300 rounded-lg text-gray-600 focus:outline-none focus:ring-2 focus:ring-green-500"
-            />
+            type="text"
+            placeholder="Поиск по имени"
+            className="w-60 pl-4 pr-4 py-2 border border-gray-300 rounded-lg text-gray-600 focus:outline-none focus:ring-2 focus:ring-green-500"
+          />
+          <input
+            type="text"
+            placeholder="Поиск по компании"
+            className="w-60 ml-4 pl-4 pr-4 py-2 border border-gray-300 rounded-lg text-gray-600 focus:outline-none focus:ring-2 focus:ring-green-500"
+          />
+          <button
+            type="button"
+            className="w-40 ml-4 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+          >
+            Добавить
+          </button>
+        </div>
+
+        <div className="flex-shrink-0 flex flex-col items-end">
+          <div className="text-xl">Посетители</div>
+          <div className="flex gap-2">
+            <div className="text-xl text-green-500">280</div>
+            <div className="text-xl">/</div>
+            <div className="text-xl text-red-500">35</div>
+          </div>
         </div>
       </div>
       
-      <div className="border border-gray-300 rounded-lg overflow-hidden mb-6">
-        <table className="min-w-full divide-y divide-gray-300">
-          <thead className="bg-gray-100">
+      <div className="inline border-gray-300 rounded-lg overflow-hidden mb-6">
+        <table className="min-w-full divide-y divide-[#E9E9E9]">
+          <thead className="">
             <tr>
-              <th className="px-6 py-3 text-left text-sm font-medium text-gray-700">Номер</th>
-              <th className="px-6 py-3 text-left text-sm font-medium text-gray-700">ФИО</th>
-              <th className="px-6 py-3 text-left text-sm font-medium text-gray-700">Добавить</th>
-              <th className="px-6 py-3 text-left text-sm font-medium text-gray-700">Группа</th>
-              <th className="px-6 py-3 text-left text-sm font-medium text-gray-700">Присутствие</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-[#4E3000] uppercase tracking-wider">Номер</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-[#4E3000] uppercase tracking-wider">ФИО</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-[#4E3000] uppercase tracking-wider">Компания</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-[#4E3000] uppercase tracking-wider">Группа</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-[#4E3000] uppercase tracking-wider">Присутствие</th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-300">
+          <tbody className="bg-white divide-y divide-gray-200">
             {filteredData.map((item) => (
               <AgroRow key={item.id} item={item} togglePresence={togglePresence} />
             ))}
           </tbody>
         </table>
       </div>
-      <AgroFilters filter={filter} setFilter={setFilter} />
+      <div className="flex justify-between items-center mt-4">
+        <AgroFilters filter={filter} setFilter={setFilter} />
+      </div>
     </div>
   );
 }
