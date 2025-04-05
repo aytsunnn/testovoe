@@ -5,26 +5,29 @@ import { Person, TogglePresenceType } from './types';
 interface AgroRowProps {
   item: Person;
   togglePresence: TogglePresenceType;
+  onRowClick: (person: Person) => void;
 }
 
-export default function AgroRow({ item, togglePresence }: AgroRowProps) {
+export default function AgroRow({ item, togglePresence, onRowClick }: AgroRowProps) {
+  const handleCheckboxClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    togglePresence(item.id);
+  };
+
   return (
-    <tr className="hover:bg-gray-50">
-      <td className="px-6 py-4 whitespace-nowrap text-sm">{item.id}</td>
-      <td className="px-6 py-4 whitespace-nowrap text-sm">{item.name}</td>
-      <td className="px-6 py-4 whitespace-nowrap text-sm">{item.company}</td>
-      <td className="px-6 py-4 whitespace-nowrap text-sm">{item.group}</td>
+    <tr 
+      className="hover:bg-gray-50 cursor-pointer" 
+      onClick={() => onRowClick(item)}
+    >
+      <td className="px-6 py-4 whitespace-nowrap text-lg">{item.id}</td>
+      <td className="px-6 py-4 whitespace-nowrap text-lg">{item.name}</td>
+      <td className="px-6 py-4 whitespace-nowrap text-lg">{item.company}</td>
+      <td className="px-6 py-4 whitespace-nowrap text-lg">{item.group}</td>
       <td className="px-6 py-4 whitespace-nowrap">
-        {item.present ? (
-          <span className="inline-block w-4 h-4 bg-green-500 rounded-full"></span>
-        ) : (
-          <span className="inline-block w-4 h-4 bg-red-500 rounded-full"></span>
-        )}
-        <input
-          type="checkbox"
-          checked={item.present}
-          onChange={() => togglePresence(item.id)}
-          hidden
+        <div 
+          onClick={handleCheckboxClick}
+          className="inline-block w-8 h-8 rounded-full cursor-pointer"
+          style={{ backgroundColor: item.present ? '#80BB00' : '#EC5937' }}
         />
       </td>
     </tr>
